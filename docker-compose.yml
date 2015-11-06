@@ -1,0 +1,19 @@
+app:
+    build: ./docker/app
+#    image: golang:latest
+    volumes:
+        - ./src:/usr/src/myapp
+    command: /usr/local/go/bin/go run /usr/src/myapp/main.go
+    command: /usr/local/go/bin/go run /usr/src/myapp/demo_mysql.go
+    links:
+        - mysql
+
+mysql:
+    build: ./docker/db
+#    image: mysql:latest
+#    volumes:
+#        - ./data:/var/lib/mysql/
+#    ports:
+#        - "3316:3306"
+    environment:
+        MYSQL_ROOT_PASSWORD: kokos1234
