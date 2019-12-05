@@ -2,8 +2,6 @@ pipeline {
   agent any
   parameters {
     string(name: 'SLACK_CHANNEL', defaultValue: '#deploys', description: '')
-    choice(name: 'TYPE', choices: 'aut\ncron\ndata', description: 'Autoscaling, Cron or Data')
-    booleanParam(name: 'DEPLOY', defaultValue: false, description: 'Update aws ami')
   }
 
   options {
