@@ -1,0 +1,80 @@
+pipeline {
+  agent any
+  parameters {
+    string(name: 'SLACK_CHANNEL', defaultValue: '#deploys', description: '')
+    choice(name: 'TYPE', choices: 'aut\ncron\ndata', description: 'Autoscaling, Cron or Data')
+    booleanParam(name: 'DEPLOY', defaultValue: false, description: 'Update aws ami')
+  }
+
+  options {
+      ansiColor("xterm")
+      timestamps()
+      timeout(time: 15, unit: "MINUTES")
+  }
+  
+  environment {
+    ARTIFACT = "${env.BUILD_NUMBER}.zip"
+    SLACK_MESSAGE = "Job '${env.JOB_NAME}' Build ${env.BUILD_NUMBER} URL ${env.BUILD_URL}"
+  }
+
+  stages {
+    stage("Repository") {
+      steps {
+        checkout scm
+      }
+    }
+    stage('Run') {
+      steps {
+          echo "hello from $USER"
+          sh "id"
+          echo "PATH $PATH"
+          echo "workspace ${env.WORKSPACE}"
+          sh "mkdir -p demo/src/"
+          sh "touch demo.txt"
+          sh "wget https://github.com/Kitware/CMake/releases/download/v3.15.0-rc2/cmake-3.15.0-rc2.tar.gz"
+          sh "ls -la"
+          
+          echo "job_name ${env.JOB_NAME}"
+          echo "build_number ${env.BUILD_NUMBER}"
+          echo "artifact: ${env.ARTIFACT}"
+          echo "message: ${env.SLACK_MESSAGE}"
+          echo "canal ${params.SLACK_CHANNEL}"
+      }
+    }
+    stage('Inspection') {
+      steps {
+        parallel (
+          syntax: { echo "check syntax" },
+          grep: { sh "echo buscando_var_dump" }
+        )
+      }
+    }
+    
+    stage ('Build') {
+      steps {
+        sh "zip -r ${env.ARTIFACT} ./"
+        archiveArtifacts artifacts: "${env.ARTIFACT}", onlyIfSuccessful: true
+        sh "rm -rf ${env.ARTIFACT}"
+      }
+    }
+  }
+
+  post {
+    always {
+      archiveArtifacts artifacts: "${env.ARTIFACT}", onlyIfSuccessful: true
+      sh "rm -f ${ARTIFACT}"
+      echo "Job has finished"
+    }
+    success {
+      slackSendMessage "good"
+    }
+    failure {
+      slackSendMessage "danger"
+    }
+  }
+}
+
+def slackSendMessage(String color){
+  slackSend channel: "${params.SLACK_CHANNEL}", color: color, failOnError: true, message: "$SLACK_MESSAGE"
+}
+
