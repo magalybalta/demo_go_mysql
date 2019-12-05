@@ -61,6 +61,7 @@ pipeline {
 
   post {
     always {
+      sh "zip -r ${env.ARTIFACT} ./"
       archiveArtifacts artifacts: "${env.ARTIFACT}", onlyIfSuccessful: true
       sh "rm -f ${ARTIFACT}"
       echo "Job has finished"
