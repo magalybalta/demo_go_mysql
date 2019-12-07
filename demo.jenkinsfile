@@ -11,7 +11,6 @@ pipeline {
   }
   
   environment {
-    ARTIFACT = "${env.BUILD_NUMBER}.zip"
     SLACK_MESSAGE = "Job '${env.JOB_NAME}' Build ${env.BUILD_NUMBER} URL ${env.BUILD_URL}"
   }
 
@@ -27,7 +26,6 @@ pipeline {
           sh "id"
           echo "PATH $PATH"
           echo "workspace ${env.WORKSPACE}"
-          sh "wget https://github.com/Kitware/CMake/releases/download/v3.15.0-rc2/cmake-3.15.0-rc2.tar.gz"
           sh "ls -la"
           
           echo "job_name ${env.JOB_NAME}"
@@ -48,18 +46,14 @@ pipeline {
     
     stage ('Build') {
       steps {
-        sh "zip -r ${env.ARTIFACT} ./"
-        archiveArtifacts artifacts: "${env.ARTIFACT}", onlyIfSuccessful: true
-        sh "rm -rf ${env.ARTIFACT}"
+        sh "docker build -f docker/app/Dockerfile -t golang-app:${BUILD_NUMBER} docker/app"
       }
     }
   }
 
   post {
     always {
-      sh "zip -r ${env.ARTIFACT} ./"
-      archiveArtifacts artifacts: "${env.ARTIFACT}", onlyIfSuccessful: true
-      sh "rm -f ${ARTIFACT}"
+      sh "docker images | grep golang-app"
       echo "Job has finished"
     }
     success {
